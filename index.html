@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coors Banquet — A Closer Look</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Loading Screen (disabled for now)
+  <div class="loading-screen" id="loading-screen">
+    <img src="assets/bottlecap loading white.png" alt="" class="loading-screen__icon">
+  </div>
+  -->
+
+  <div class="site-wrapper">
+    <nav class="side-nav" id="side-nav" aria-label="Section navigation">
+      <!-- Generated dynamically -->
+    </nav>
+
+    <main class="main-content">
+      <section class="section hero section--red" id="hero">
+        <div class="section__content hero__frame">
+          <p class="hero__eyebrow">Adolph Coors'</p>
+          <img src="assets/Mask group.png" alt="Banquet" class="hero__title-img">
+          <p class="hero__tagline">A closer look</p>
+        </div>
+      </section>
+
+      <div id="cap-sections"></div>
+    </main>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lightbox__overlay"></div>
+    <div class="lightbox__content" id="lightbox-content">
+      <div class="lightbox__image-container" id="lightbox-container">
+        <img src="" alt="" class="lightbox__image" id="lightbox-image">
+      </div>
+    </div>
+    <button class="lightbox__close" aria-label="Close">&times;</button>
+    <p class="lightbox__zoom-hint" id="zoom-hint"></p>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const CONFIG = {
+        capsToShow: 14,
+        gridCapsToShow: 100,
+        dataFiles: {
+          caps: 'assets/banquet-cap-urls-front-back.json',
+          facts: 'assets/banquet-facts.json'
+        }
+      };
+
+      let capData = { frontCaps: [], backCaps: [], facts: [] };
+
+      // ---- Data ----
+      async function loadData() {
+        try {
+          const [c, f] = await Promise.all([
+            fetch(CONFIG.dataFiles.caps),
+            fetch(CONFIG.dataFiles.facts)
+          ]);
+          const cj = await c.json();
+          const fj = await f.json();
+          capData.frontCaps = cj.frontCaps || [];
+          capData.backCaps = cj.backCaps || [];
+          capData.facts = fj.caps || [];
+          return true;
+        } catch (e) {
+          console.error('Error loading data:', e);
+          return false;
+        }
+      }
+
+      // ---- Grid ----
+      function renderGridSection() {
+        const container = document.getElementById('grid-caps');
+        if (!container) return;
+        const frag = document.createDocumentFragment();
+        const count = Math.min(CONFIG.gridCapsToShow, capData.frontCaps.length);
+        for (let i = 0; i < count; i++) {
+          const item = document.createElement('div');
+          item.className = 'grid-caps__item';
+          item.dataset.capIndex = i;
+          const img = document.createElement('img');
+          img.src = capData.frontCaps[i];
+          img.alt = '';
+          img.loading = 'lazy';
+          item.appendChild(img);
+          frag.appendChild(item);
+        }
+        container.appendChild(frag);
+      }
+
+      // ---- Cap Sections ----
+      function renderCapSections() {
+        const container = document.getElementById('cap-sections');
+        if (!container) return;
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < CONFIG.capsToShow; i++) {
+          frag.appendChild(createCapSection(i));
+        }
+        container.appendChild(frag);
+      }
+
+      function getBackFact(index) {
+        const offset = Math.floor(capData.facts.length / 2);
+        const i = (index + offset) % capData.facts.length;
+        return capData.facts[i]?.fact || 'A piece of Coors Banquet history.';
+      }
+
+      function createCapSection(index) {
+        const section = document.createElement('section');
+        const isBlack = index % 2 === 0; // even index = black, odd = red
+        section.className = `section cap-section ${isBlack ? 'cap-section--black' : 'cap-section--red'}`;
+        section.id = `cap-${index + 1}`;
+        section.dataset.side = 'front';
+        section.dataset.index = index;
+
+        // Cycle through available data if we have more slides than data entries
+        const frontImage = capData.frontCaps[index % capData.frontCaps.length] || '';
+        const backImage = capData.backCaps[index % capData.backCaps.length] || '';
+        const frontFact = capData.facts[index % capData.facts.length]?.fact || 'A piece of Coors Banquet history.';
+        const backFact = getBackFact(index);
+
+        section.innerHTML = `
+          <div class="section__content cap-section__inner">
+            <div class="cap-section__image-wrapper" data-cap-index="${index}">
+              <img src="${frontImage}" alt="" class="cap-section__image"
+                data-front="${frontImage}" data-back="${backImage}">
+            </div>
+            <div class="cap-section__content">
+              <p class="cap-section__fact" data-front-fact="${frontFact}" data-back-fact="${backFact}">${frontFact}</p>
+              <button class="flip-btn" type="button" aria-label="Flip cap">
+                <span>Flip Cap</span>
+                <svg class="flip-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                  <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        `;
+        return section;
+      }
+
+      // ---- Flip with 3D cap animation + fact fade ----
+      function initFlipButtons() {
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest('.flip-btn');
+          if (!btn) return;
+
+          const section = btn.closest('.cap-section');
+          if (!section) return;
+
+          const img = section.querySelector('.cap-section__image');
+          const factEl = section.querySelector('.cap-section__fact');
+          if (!img || !factEl) return;
+          if (img.classList.contains('is-flipping')) return; // prevent double-click
+
+          const currentSide = section.dataset.side;
+          const newSide = currentSide === 'front' ? 'back' : 'front';
+
+          // Start 3D flip animation
+          img.classList.add('is-flipping');
+
+          // Fade out fact to the left
+          factEl.classList.add('is-fading-out');
+
+          // Swap image at the midpoint of the flip (when cap is edge-on)
+          setTimeout(() => {
+            img.src = img.dataset[newSide];
+          }, 250);
+
+          // Swap fact text and fade in from right
+          setTimeout(() => {
+            const newFact = newSide === 'front' ? factEl.dataset.frontFact : factEl.dataset.backFact;
+            factEl.textContent = newFact;
+            factEl.classList.remove('is-fading-out');
+            factEl.classList.add('is-fading-in');
+            factEl.offsetHeight;
+            factEl.classList.remove('is-fading-in');
+          }, 350);
+
+          // Cleanup
+          setTimeout(() => {
+            img.classList.remove('is-flipping');
+            section.dataset.side = newSide;
+            btn.querySelector('span').textContent = newSide === 'front' ? 'Flip Cap' : 'Flip Back';
+          }, 700);
+        });
+      }
+
+      // ---- Lightbox — cursor pan (desktop) + pinch/drag (mobile) ----
+      function initLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        const lightboxContent = document.getElementById('lightbox-content');
+        const lightboxContainer = document.getElementById('lightbox-container');
+        const overlay = lightbox.querySelector('.lightbox__overlay');
+        const closeBtn = lightbox.querySelector('.lightbox__close');
+        const zoomHint = document.getElementById('zoom-hint');
+
+        let originRect = null;
+        let isZoomed = false;
+        let isOpen = false;
+        const desktopZoomScale = 2.5;
+        let currentScale = 1;
+        let currentTx = 0;
+        let currentTy = 0;
+
+        // Touch state
+        let lastTouchDist = 0;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+        let touchStartedZoomed = false;
+        const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+        // Set hint text based on device
+        zoomHint.textContent = isTouchDevice
+          ? 'Double-tap to zoom \u00b7 Pinch to resize'
+          : 'Click to zoom \u00b7 Move cursor to pan';
+
+        function applyTransform() {
+          lightboxImage.style.transform = `scale(${currentScale}) translate(${currentTx}%, ${currentTy}%)`;
+        }
+
+        function clampPan() {
+          const maxPan = Math.max(0, (currentScale - 1) * 50 * 0.65);
+          currentTx = Math.max(-maxPan, Math.min(maxPan, currentTx));
+          currentTy = Math.max(-maxPan, Math.min(maxPan, currentTy));
+        }
+
+        function openLightbox(imageSrc, el) {
+          isZoomed = false;
+          isOpen = true;
+          currentScale = 1;
+          currentTx = 0;
+          currentTy = 0;
+          lightboxImage.style.transform = 'scale(1)';
+          lightboxContainer.classList.remove('is-zoomed');
+          zoomHint.classList.remove('is-hidden');
+          lightbox.classList.remove('is-closing');
+
+          originRect = el.getBoundingClientRect();
+
+          lightboxContent.style.transition = 'none';
+          lightboxContent.style.opacity = '1';
+          lightboxContent.style.top = originRect.top + 'px';
+          lightboxContent.style.left = originRect.left + 'px';
+          lightboxContent.style.width = originRect.width + 'px';
+          lightboxContent.style.height = originRect.height + 'px';
+
+          lightboxImage.src = imageSrc;
+          lightbox.classList.add('is-active');
+          lightbox.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+
+          lightboxContent.offsetHeight;
+
+          const sz = Math.min(window.innerWidth * (isTouchDevice ? 0.85 : 0.7), window.innerHeight * (isTouchDevice ? 0.85 : 0.7));
+          lightboxContent.style.transition = '';
+          lightboxContent.style.top = ((window.innerHeight - sz) / 2) + 'px';
+          lightboxContent.style.left = ((window.innerWidth - sz) / 2) + 'px';
+          lightboxContent.style.width = sz + 'px';
+          lightboxContent.style.height = sz + 'px';
+        }
+
+        function closeLightbox() {
+          if (!isOpen) return;
+          isOpen = false;
+          isZoomed = false;
+          currentScale = 1;
+          currentTx = 0;
+          currentTy = 0;
+          lightboxImage.style.transform = 'scale(1)';
+          lightboxContainer.classList.remove('is-zoomed');
+
+          lightbox.classList.add('is-closing');
+
+          if (originRect) {
+            lightboxContent.style.top = originRect.top + 'px';
+            lightboxContent.style.left = originRect.left + 'px';
+            lightboxContent.style.width = originRect.width + 'px';
+            lightboxContent.style.height = originRect.height + 'px';
+          }
+
+          setTimeout(() => {
+            lightbox.classList.remove('is-active', 'is-closing');
+            lightbox.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            lightboxImage.src = '';
+            lightboxContent.style.opacity = '';
+            originRect = null;
+          }, 500);
+        }
+
+        // ---- Desktop: click-to-zoom + cursor pan ----
+        function toggleZoom(e) {
+          if (isTouchDevice) return; // touch handled separately
+          isZoomed = !isZoomed;
+          if (isZoomed) {
+            currentScale = desktopZoomScale;
+            lightboxContainer.classList.add('is-zoomed');
+            zoomHint.classList.add('is-hidden');
+            panToPointDesktop(e.clientX, e.clientY);
+          } else {
+            currentScale = 1;
+            currentTx = 0;
+            currentTy = 0;
+            applyTransform();
+            lightboxContainer.classList.remove('is-zoomed');
+            zoomHint.classList.remove('is-hidden');
+          }
+        }
+
+        function panToPointDesktop(clientX, clientY) {
+          const rect = lightboxContainer.getBoundingClientRect();
+          const nx = ((clientX - rect.left) / rect.width - 0.5) * 2;
+          const ny = ((clientY - rect.top) / rect.height - 0.5) * 2;
+          const maxPan = (currentScale - 1) * 50 * 0.65;
+          currentTx = -nx * maxPan;
+          currentTy = -ny * maxPan;
+          applyTransform();
+        }
+
+        lightboxContainer.addEventListener('mousemove', (e) => {
+          if (!isZoomed || isTouchDevice) return;
+          panToPointDesktop(e.clientX, e.clientY);
+        });
+
+        // ---- Mobile: pinch-to-zoom + drag-to-pan ----
+        function getTouchDist(t1, t2) {
+          const dx = t1.clientX - t2.clientX;
+          const dy = t1.clientY - t2.clientY;
+          return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        lightboxContainer.addEventListener('touchstart', (e) => {
+          if (!isOpen) return;
+
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            lastTouchDist = getTouchDist(e.touches[0], e.touches[1]);
+          } else if (e.touches.length === 1 && currentScale > 1.05) {
+            e.preventDefault();
+            touchStartedZoomed = true;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+          } else {
+            touchStartedZoomed = false;
+          }
+        }, { passive: false });
+
+        lightboxContainer.addEventListener('touchmove', (e) => {
+          if (!isOpen) return;
+
+          // Pinch to zoom
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            const dist = getTouchDist(e.touches[0], e.touches[1]);
+            const delta = dist / lastTouchDist;
+            currentScale = Math.max(1, Math.min(5, currentScale * delta));
+            lastTouchDist = dist;
+
+            isZoomed = currentScale > 1.05;
+            if (isZoomed) {
+              lightboxContainer.classList.add('is-zoomed');
+              zoomHint.classList.add('is-hidden');
+            }
+
+            clampPan();
+            applyTransform();
+            return;
+          }
+
+          // One-finger drag to pan (only when zoomed)
+          if (e.touches.length === 1 && touchStartedZoomed && currentScale > 1.05) {
+            e.preventDefault();
+            const dx = e.touches[0].clientX - lastTouchX;
+            const dy = e.touches[0].clientY - lastTouchY;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+
+            // Convert pixel delta to percentage
+            const rect = lightboxContainer.getBoundingClientRect();
+            currentTx += (dx / rect.width) * 100;
+            currentTy += (dy / rect.height) * 100;
+            clampPan();
+            applyTransform();
+          }
+        }, { passive: false });
+
+        lightboxContainer.addEventListener('touchend', (e) => {
+          if (!isOpen) return;
+
+          // Snap back to 1x if nearly unzoomed
+          if (e.touches.length === 0 && currentScale < 1.15) {
+            currentScale = 1;
+            currentTx = 0;
+            currentTy = 0;
+            isZoomed = false;
+            lightboxContainer.classList.remove('is-zoomed');
+            zoomHint.classList.remove('is-hidden');
+            applyTransform();
+          }
+          touchStartedZoomed = false;
+        });
+
+        // Double-tap to zoom on mobile
+        let lastTap = 0;
+        lightboxContainer.addEventListener('touchend', (e) => {
+          if (!isOpen || e.touches.length > 0) return;
+          const now = Date.now();
+          if (now - lastTap < 300) {
+            e.preventDefault();
+            if (currentScale > 1.1) {
+              currentScale = 1;
+              currentTx = 0;
+              currentTy = 0;
+              isZoomed = false;
+              lightboxContainer.classList.remove('is-zoomed');
+              zoomHint.classList.remove('is-hidden');
+            } else {
+              currentScale = 2.5;
+              isZoomed = true;
+              lightboxContainer.classList.add('is-zoomed');
+              zoomHint.classList.add('is-hidden');
+              // Center zoom on tap point
+              const touch = e.changedTouches[0];
+              const rect = lightboxContainer.getBoundingClientRect();
+              const nx = ((touch.clientX - rect.left) / rect.width - 0.5) * 2;
+              const ny = ((touch.clientY - rect.top) / rect.height - 0.5) * 2;
+              const maxPan = (currentScale - 1) * 50 * 0.65;
+              currentTx = -nx * maxPan;
+              currentTy = -ny * maxPan;
+            }
+            applyTransform();
+            lastTap = 0;
+          } else {
+            lastTap = now;
+          }
+        });
+
+        // Click to open caps
+        document.addEventListener('click', (e) => {
+          const gridItem = e.target.closest('.grid-caps__item');
+          if (gridItem) {
+            const img = gridItem.querySelector('img');
+            if (img) openLightbox(img.src, img);
+            return;
+          }
+          const capWrapper = e.target.closest('.cap-section__image-wrapper');
+          if (capWrapper) {
+            const img = capWrapper.querySelector('img');
+            if (img) openLightbox(img.src, img);
+          }
+        });
+
+        // Desktop click zoom toggle
+        lightboxContainer.addEventListener('click', toggleZoom);
+
+        // Close
+        overlay.addEventListener('click', closeLightbox);
+        closeBtn.addEventListener('click', closeLightbox);
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && lightbox.classList.contains('is-active')) closeLightbox();
+        });
+      }
+
+      // ---- Build Side Nav Dynamically ----
+      function buildSideNav() {
+        const nav = document.getElementById('side-nav');
+        if (!nav) return;
+
+        const frag = document.createDocumentFragment();
+
+        // Home icon button
+        const homeLink = document.createElement('a');
+        homeLink.href = '#hero';
+        homeLink.className = 'side-nav__item';
+        homeLink.setAttribute('aria-label', 'Home');
+        homeLink.innerHTML = `<svg class="side-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>`;
+        frag.appendChild(homeLink);
+
+        // Grid icon button (3x3 grid of circles) — links to separate page
+        const gridLink = document.createElement('a');
+        gridLink.href = 'grid.html';
+        gridLink.className = 'side-nav__item';
+        gridLink.setAttribute('aria-label', 'Grid');
+        gridLink.innerHTML = `<svg class="side-nav__icon" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/>
+          <circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/>
+          <circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/>
+        </svg>`;
+        frag.appendChild(gridLink);
+
+        // Divider
+        const div = document.createElement('div');
+        div.className = 'side-nav__divider';
+        frag.appendChild(div);
+
+        // Numbered items 01-14 for cap sections
+        for (let i = 0; i < CONFIG.capsToShow; i++) {
+          const n = String(i + 1).padStart(2, '0');
+          const a = document.createElement('a');
+          a.href = `#cap-${i + 1}`;
+          a.className = 'side-nav__item';
+          a.dataset.section = String(i + 1);
+          a.textContent = n;
+          frag.appendChild(a);
+        }
+
+        nav.appendChild(frag);
+      }
+
+      // ---- Scroll Reveal — only after snap completes (scrollend) ----
+      function initScrollReveal() {
+        const scrollRoot = document.querySelector('.main-content');
+        const allSections = () => document.querySelectorAll('.section[id]');
+
+        // Hero is always visible
+        const heroContent = document.querySelector('.hero .section__content');
+        if (heroContent) heroContent.classList.add('is-visible');
+
+        // Determine which section is snapped (closest to container top)
+        function getSnappedSection() {
+          const containerTop = scrollRoot.scrollTop;
+          const containerH = scrollRoot.clientHeight;
+          let best = null;
+          let bestDist = Infinity;
+
+          allSections().forEach(sec => {
+            const secTop = sec.offsetTop - scrollRoot.offsetTop;
+            const dist = Math.abs(secTop - containerTop);
+            if (dist < bestDist) {
+              bestDist = dist;
+              best = sec;
+            }
+          });
+
+          // Only consider it "snapped" if within 5% of viewport height
+          if (best && bestDist < containerH * 0.05) return best;
+          return null;
+        }
+
+        function revealSnappedSection() {
+          const snapped = getSnappedSection();
+
+          // Hide all non-hero section content
+          document.querySelectorAll('.section__content').forEach(el => {
+            if (el.closest('.hero')) return; // hero stays visible
+            el.classList.remove('is-visible');
+          });
+
+          // Reveal only the snapped section
+          if (snapped && !snapped.classList.contains('hero')) {
+            const content = snapped.querySelector('.section__content');
+            if (content) content.classList.add('is-visible');
+          }
+        }
+
+        // Use scrollend event (fires after snap completes)
+        if ('onscrollend' in window) {
+          scrollRoot.addEventListener('scrollend', revealSnappedSection);
+        } else {
+          // Fallback: debounced scroll for older browsers
+          let scrollTimer = null;
+          scrollRoot.addEventListener('scroll', () => {
+            // Immediately hide content when scrolling starts
+            document.querySelectorAll('.section__content').forEach(el => {
+              if (el.closest('.hero')) return;
+              el.classList.remove('is-visible');
+            });
+
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(revealSnappedSection, 120);
+          }, { passive: true });
+        }
+
+        // Also hide content during active scrolling (for scrollend browsers too)
+        let isScrolling = false;
+        scrollRoot.addEventListener('scroll', () => {
+          if (!isScrolling) {
+            isScrolling = true;
+            document.querySelectorAll('.section__content').forEach(el => {
+              if (el.closest('.hero')) return;
+              el.classList.remove('is-visible');
+            });
+          }
+          clearTimeout(isScrolling._t);
+          isScrolling._t = setTimeout(() => { isScrolling = false; }, 50);
+        }, { passive: true });
+
+        // Reveal initial section on load
+        requestAnimationFrame(() => {
+          setTimeout(revealSnappedSection, 100);
+        });
+      }
+
+      // ---- Side Nav Active ----
+      function initSideNavigation() {
+        const navItems = document.querySelectorAll('.side-nav__item');
+        const sections = document.querySelectorAll('.section[id]');
+        if (!navItems.length || !sections.length) return;
+
+        const scrollRoot = document.querySelector('.main-content');
+
+        // Scroll within .main-content on nav click (skip external links like grid.html)
+        navItems.forEach(item => {
+          item.addEventListener('click', (e) => {
+            const href = item.getAttribute('href');
+            if (!href || !href.startsWith('#')) return; // let normal links navigate
+            e.preventDefault();
+            const targetId = href.slice(1);
+            const target = document.getElementById(targetId);
+            if (target && scrollRoot) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+        });
+
+        const obs = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const id = entry.target.id;
+              navItems.forEach(item => {
+                item.classList.toggle('is-active', item.getAttribute('href') === `#${id}`);
+              });
+
+              // Update scrollbar color based on section background
+              const section = entry.target;
+              const isRed = section.classList.contains('section--red') ||
+                            section.classList.contains('cap-section--red') ||
+                            section.classList.contains('grid-section--red') ||
+                            section.classList.contains('hero');
+              scrollRoot.classList.toggle('scrollbar-on-red', isRed);
+            }
+          });
+        }, { root: scrollRoot, rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+
+        sections.forEach(s => obs.observe(s));
+      }
+
+      // ---- Loading Screen — wait for all images ----
+      function waitForAllImages() {
+        return new Promise((resolve) => {
+          const images = document.querySelectorAll('img[src]');
+          if (!images.length) { resolve(); return; }
+
+          let loaded = 0;
+          const total = images.length;
+
+          function check() {
+            loaded++;
+            if (loaded >= total) resolve();
+          }
+
+          images.forEach(img => {
+            if (img.complete && img.naturalWidth > 0) {
+              check();
+            } else {
+              img.addEventListener('load', check, { once: true });
+              img.addEventListener('error', check, { once: true });
+            }
+          });
+
+          // Safety timeout — don't wait more than 12 seconds
+          setTimeout(resolve, 12000);
+        });
+      }
+
+      function hideLoadingScreen() {
+        const loader = document.getElementById('loading-screen');
+        if (loader) {
+          loader.classList.add('is-hidden');
+          // Remove from DOM after transition
+          setTimeout(() => { loader.remove(); }, 700);
+        }
+      }
+
+      // ---- Scrollbar enlarge on drag ----
+      function initScrollbarEnlarge() {
+        const mc = document.querySelector('.main-content');
+        if (!mc) return;
+
+        // Detect mousedown on the scrollbar area (right edge of container)
+        mc.addEventListener('mousedown', (e) => {
+          const rect = mc.getBoundingClientRect();
+          // If click is in the scrollbar region (beyond the content area)
+          if (e.clientX >= rect.right - 14) {
+            mc.classList.add('is-scrollbar-active');
+          }
+        });
+
+        document.addEventListener('mouseup', () => {
+          mc.classList.remove('is-scrollbar-active');
+        });
+      }
+
+      // ---- Init ----
+      async function init() {
+        if (await loadData()) {
+          renderCapSections();
+          buildSideNav();
+          initFlipButtons();
+          initLightbox();
+          initScrollReveal();
+          initSideNavigation();
+          initScrollbarEnlarge();
+
+          // Loading screen disabled for now
+          // await waitForAllImages();
+          // hideLoadingScreen();
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>

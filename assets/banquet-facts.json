@@ -1,0 +1,384 @@
+{
+  "caps": [
+    {
+      "id": 1,
+      "fact": "Coors Banquet was first brewed in 1873 by Adolph Coors in Golden, Colorado."
+    },
+    {
+      "id": 2,
+      "fact": "The beer was originally just called Coors Beer; “Banquet” was a nickname given by miners."
+    },
+    {
+      "id": 3,
+      "fact": "Adolph Coors was a German immigrant who stowed away on a ship to America."
+    },
+    {
+      "id": 4,
+      "fact": "The original Coors brewery was built at the base of the Rocky Mountains to access fresh spring water."
+    },
+    {
+      "id": 5,
+      "fact": "“Banquet” reportedly came from Colorado miners who drank the beer at celebratory banquets after work."
+    },
+    {
+      "id": 6,
+      "fact": "Coors was one of the first breweries to use aluminum cans, helping to popularize them."
+    },
+    {
+      "id": 7,
+      "fact": "The water used in Coors Banquet comes from the Clear Creek watershed."
+    },
+    {
+      "id": 8,
+      "fact": "In its early years, Coors also produced soda, malted milk, and porcelain to stay afloat."
+    },
+    {
+      "id": 9,
+      "fact": "The Coors family originally lived above the brewery in Golden, Colorado."
+    },
+    {
+      "id": 10,
+      "fact": "During Prohibition, Coors survived by selling near beer and manufacturing ceramic products."
+    },
+    {
+      "id": 11,
+      "fact": "Prohibition began in Colorado in 1916, four years before national Prohibition."
+    },
+    {
+      "id": 12,
+      "fact": "Coors developed a product called Manna, a non-alcoholic malted milk."
+    },
+    {
+      "id": 13,
+      "fact": "Adolph Coors Jr. helped transition the company through Prohibition."
+    },
+    {
+      "id": 14,
+      "fact": "The Coors Porcelain division became highly successful, producing labware and industrial ceramics."
+    },
+    {
+      "id": 15,
+      "fact": "Coors reused yeast strains from before Prohibition, preserving its original flavor."
+    },
+    {
+      "id": 16,
+      "fact": "Coors Banquet was sold only west of the Mississippi River until 1981."
+    },
+    {
+      "id": 17,
+      "fact": "Its limited distribution gave Banquet a “forbidden fruit” mystique in the eastern U.S."
+    },
+    {
+      "id": 18,
+      "fact": "The beer was not pasteurized, which limited how far it could be shipped."
+    },
+    {
+      "id": 19,
+      "fact": "Coors pioneered cold filtering as an alternative to pasteurization."
+    },
+    {
+      "id": 20,
+      "fact": "Smuggling Coors east became a pop-culture phenomenon in the 1970s."
+    },
+    {
+      "id": 21,
+      "fact": "The 1977 film “Smokey and the Bandit” centers on smuggling Coors Banquet to Georgia."
+    },
+    {
+      "id": 22,
+      "fact": "President Gerald Ford reportedly had Coors smuggled to him by the Secret Service."
+    },
+    {
+      "id": 23,
+      "fact": "Actor Paul Newman was a fan of Coors Banquet."
+    },
+    {
+      "id": 24,
+      "fact": "Coors Banquet was served at the White House during the Reagan administration."
+    },
+    {
+      "id": 25,
+      "fact": "Clint Eastwood drank Coors Banquet in films like “Every Which Way but Loose.”"
+    },
+    {
+      "id": 26,
+      "fact": "Coors Banquet is known for its distinctive stubby bottle."
+    },
+    {
+      "id": 27,
+      "fact": "The stubby bottle is officially called the “Heritage Bottle.”"
+    },
+    {
+      "id": 28,
+      "fact": "In the 2000s, Coors leaned into its heritage branding to stand apart from Coors Light."
+    },
+    {
+      "id": 29,
+      "fact": "The Banquet label has featured the Rocky Mountains since the 1940s."
+    },
+    {
+      "id": 30,
+      "fact": "Its gold-and-brown branding conveys ruggedness and tradition."
+    },
+    {
+      "id": 31,
+      "fact": "Coors remained family-owned for over a century."
+    },
+    {
+      "id": 32,
+      "fact": "In 1959, it became the largest single-site brewery in the world."
+    },
+    {
+      "id": 33,
+      "fact": "Coors Light was introduced in 1978."
+    },
+    {
+      "id": 34,
+      "fact": "The company merged with Molson in 2005."
+    },
+    {
+      "id": 35,
+      "fact": "Despite Coors Light’s success, Banquet retained a distinct identity."
+    },
+    {
+      "id": 36,
+      "fact": "Coors was the first American brewery to establish an onsite recycling center."
+    },
+    {
+      "id": 37,
+      "fact": "It was the first to sell beer in all-aluminum cans in 1959."
+    },
+    {
+      "id": 38,
+      "fact": "Spent grain from brewing is reused to feed local livestock."
+    },
+    {
+      "id": 39,
+      "fact": "Coors installed pollution control equipment earlier than many competitors."
+    },
+    {
+      "id": 40,
+      "fact": "Banquet was bottled in recyclable glass before it became industry standard."
+    },
+    {
+      "id": 41,
+      "fact": "Coors Banquet is often seen as a symbol of the American West."
+    },
+    {
+      "id": 42,
+      "fact": "It is especially popular in Colorado, Texas, and the Mountain West."
+    },
+    {
+      "id": 43,
+      "fact": "The beer is nicknamed the “Cowboy Beer.”"
+    },
+    {
+      "id": 44,
+      "fact": "Coors Banquet has a loyal following among military veterans."
+    },
+    {
+      "id": 45,
+      "fact": "It has long been associated with blue-collar culture."
+    },
+    {
+      "id": 46,
+      "fact": "Coors faced boycotts in the 1970s and 1980s over labor and LGBTQ+ issues."
+    },
+    {
+      "id": 47,
+      "fact": "Activist César Chávez supported boycotts against Coors."
+    },
+    {
+      "id": 48,
+      "fact": "The company later worked to rebuild its public image through inclusivity."
+    },
+    {
+      "id": 49,
+      "fact": "Coors once refused to unionize, sparking national protests."
+    },
+    {
+      "id": 50,
+      "fact": "Political donations by Coors executives stirred controversy in the 1980s."
+    },
+    {
+      "id": 51,
+      "fact": "Adolph Coors II died in a fall from a hotel window in 1929."
+    },
+    {
+      "id": 52,
+      "fact": "Adolph Coors III was kidnapped and murdered in 1960."
+    },
+    {
+      "id": 53,
+      "fact": "The Coors family has remained influential in conservative politics."
+    },
+    {
+      "id": 54,
+      "fact": "Bill Coors oversaw major expansion in the 1970s."
+    },
+    {
+      "id": 55,
+      "fact": "Peter Coors ran for U.S. Senate in 2004."
+    },
+    {
+      "id": 56,
+      "fact": "Vintage Coors Banquet cans are highly collectible."
+    },
+    {
+      "id": 57,
+      "fact": "Limited-edition heritage cans are released for anniversaries."
+    },
+    {
+      "id": 58,
+      "fact": "Older packaging featured the slogan “Brewed with Rocky Mountain Spring Water.”"
+    },
+    {
+      "id": 59,
+      "fact": "Retro Banquet packaging is central to its nostalgic appeal."
+    },
+    {
+      "id": 60,
+      "fact": "Vintage Americana trends have revived interest in Banquet."
+    },
+    {
+      "id": 61,
+      "fact": "Kevin Costner and the cast of “Yellowstone” drink Banquet on screen."
+    },
+    {
+      "id": 62,
+      "fact": "Cowboy-core aesthetics helped fuel Banquet’s modern resurgence."
+    },
+    {
+      "id": 63,
+      "fact": "Social media introduced Banquet to Gen Z and Millennials."
+    },
+    {
+      "id": 64,
+      "fact": "Craft beer fans often respect Banquet for its consistency."
+    },
+    {
+      "id": 65,
+      "fact": "Coors Banquet is brewed exclusively in Golden, Colorado."
+    },
+    {
+      "id": 66,
+      "fact": "The brewery uses Moravian barley grown specifically for Coors."
+    },
+    {
+      "id": 67,
+      "fact": "The brewing process takes around 30 days."
+    },
+    {
+      "id": 68,
+      "fact": "The yeast strain has remained unchanged since the 1930s."
+    },
+    {
+      "id": 69,
+      "fact": "Ceramic filters are used in the brewing process."
+    },
+    {
+      "id": 70,
+      "fact": "Coors Banquet sponsors rodeos, rallies, and western festivals."
+    },
+    {
+      "id": 71,
+      "fact": "It has been a longtime sponsor of NASCAR and bull riding."
+    },
+    {
+      "id": 72,
+      "fact": "Banquet is often served at the Sturgis Motorcycle Rally."
+    },
+    {
+      "id": 73,
+      "fact": "The company supports wildland firefighter relief funds."
+    },
+    {
+      "id": 74,
+      "fact": "In 2023, Coors celebrated its 150th anniversary."
+    },
+    {
+      "id": 75,
+      "fact": "Legal battles once prevented Coors from shipping to some states."
+    },
+    {
+      "id": 76,
+      "fact": "Some states once deemed Coors “too fresh” for safe distribution."
+    },
+    {
+      "id": 77,
+      "fact": "Limited access led to black-market bootlegging."
+    },
+    {
+      "id": 78,
+      "fact": "In the 1970s, bringing Coors east was seen as a status flex."
+    },
+    {
+      "id": 79,
+      "fact": "The Golden brewery is a major tourist destination."
+    },
+    {
+      "id": 80,
+      "fact": "The site spans over 1,700 acres of land."
+    },
+    {
+      "id": 81,
+      "fact": "The Coors mansion still stands as a landmark in Golden."
+    },
+    {
+      "id": 82,
+      "fact": "The brewery generates steam energy onsite."
+    },
+    {
+      "id": 83,
+      "fact": "Elvis Presley was reportedly a fan of Coors Banquet."
+    },
+    {
+      "id": 84,
+      "fact": "A brewery-only Banquet with extra malt was once released."
+    },
+    {
+      "id": 85,
+      "fact": "Coors helped develop early beer cooling systems in the 1930s."
+    },
+    {
+      "id": 86,
+      "fact": "Coors Banquet has been served on U.S. Navy ships."
+    },
+    {
+      "id": 87,
+      "fact": "A version was once marketed as a “diet beer” in the 1960s."
+    },
+    {
+      "id": 88,
+      "fact": "Banquet is exported to Canada, Japan, and Europe."
+    },
+    {
+      "id": 89,
+      "fact": "Overseas marketing emphasizes American heritage."
+    },
+    {
+      "id": 90,
+      "fact": "Banquet is priced as a premium import in some countries."
+    },
+    {
+      "id": 91,
+      "fact": "Before refrigeration, Banquet was stored in underground caverns."
+    },
+    {
+      "id": 92,
+      "fact": "Merch includes hats, flannels, belt buckles, and enamel mugs."
+    },
+    {
+      "id": 93,
+      "fact": "Coors Banquet appears in dozens of country songs."
+    },
+    {
+      "id": 94,
+      "fact": "There is an unofficial fan group called the “Banquet Boys.”"
+    },
+    {
+      "id": 95,
+      "fact": "Some bartenders shorthand it as “Banq.”"
+    }
+  ]
+}

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coors Banquet — Cap Grid</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .grid-page .main-content {
+      overflow: hidden; /* no scrolling at all on the grid page */
+    }
+    .grid-page .grid-section {
+      min-height: 100vh;
+      height: 100vh;
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .grid-page .grid-section .section__content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-height: calc(100vh - var(--space-lg));
+      width: 100%;
+    }
+    .grid-page .grid-caps {
+      max-width: min(90vh, 1000px);
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="grid-page">
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loading-screen">
+    <img src="assets/bottlecap loading white.png" alt="" class="loading-screen__icon">
+  </div>
+
+  <div class="site-wrapper">
+    <nav class="side-nav" id="side-nav" aria-label="Section navigation">
+      <!-- Generated dynamically -->
+    </nav>
+
+    <main class="main-content">
+      <section class="section grid-section grid-section--red" id="grid">
+        <div class="section__content" style="opacity:1; transform:none;">
+          <div class="grid-caps" id="grid-caps"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lightbox__overlay"></div>
+    <div class="lightbox__content" id="lightbox-content">
+      <div class="lightbox__image-container" id="lightbox-container">
+        <img src="" alt="" class="lightbox__image" id="lightbox-image">
+      </div>
+    </div>
+    <button class="lightbox__close" aria-label="Close">&times;</button>
+    <p class="lightbox__zoom-hint" id="zoom-hint"></p>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const CONFIG = {
+        gridCapsToShow: 100,
+        capsToShow: 14,
+        dataFiles: {
+          caps: 'assets/banquet-cap-urls-front-back.json',
+          facts: 'assets/banquet-facts.json'
+        }
+      };
+
+      let capData = { frontCaps: [], backCaps: [], facts: [] };
+
+      // ---- Data ----
+      async function loadData() {
+        try {
+          const [c, f] = await Promise.all([
+            fetch(CONFIG.dataFiles.caps),
+            fetch(CONFIG.dataFiles.facts)
+          ]);
+          const cj = await c.json();
+          const fj = await f.json();
+          capData.frontCaps = cj.frontCaps || [];
+          capData.backCaps = cj.backCaps || [];
+          capData.facts = fj.caps || [];
+          return true;
+        } catch (e) {
+          console.error('Error loading data:', e);
+          return false;
+        }
+      }
+
+      // ---- Grid ----
+      function renderGridSection() {
+        const container = document.getElementById('grid-caps');
+        if (!container) return;
+        const frag = document.createDocumentFragment();
+        const count = Math.min(CONFIG.gridCapsToShow, capData.frontCaps.length);
+        for (let i = 0; i < count; i++) {
+          const item = document.createElement('div');
+          item.className = 'grid-caps__item';
+          item.dataset.capIndex = i;
+          item.dataset.side = 'front';
+          const img = document.createElement('img');
+          img.src = capData.frontCaps[i];
+          img.dataset.front = capData.frontCaps[i];
+          img.dataset.back = capData.backCaps[i % capData.backCaps.length] || '';
+          img.alt = '';
+          img.loading = 'lazy';
+          item.appendChild(img);
+          frag.appendChild(item);
+        }
+        container.appendChild(frag);
+      }
+
+      // ---- Flip All (cascading) ----
+      function initFlipAll() {
+        const gridCaps = document.getElementById('grid-caps');
+        if (!gridCaps) return;
+
+        let gridSide = 'front';
+        let isFlipping = false;
+
+        const btn = document.createElement('button');
+        btn.className = 'grid-flip-btn';
+        btn.type = 'button';
+        btn.innerHTML = `<span>Flip All</span>
+          <svg class="grid-flip-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+            <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+          </svg>`;
+
+        // Insert before grid
+        gridCaps.parentNode.insertBefore(btn, gridCaps);
+
+        btn.addEventListener('click', () => {
+          if (isFlipping) return;
+          isFlipping = true;
+
+          const items = gridCaps.querySelectorAll('.grid-caps__item');
+          const newSide = gridSide === 'front' ? 'back' : 'front';
+          const cols = 10;
+
+          items.forEach((item, i) => {
+            const row = Math.floor(i / cols);
+            const col = i % cols;
+            const delay = (row + col) * 30;
+
+            setTimeout(() => {
+              const img = item.querySelector('img');
+              if (!img) return;
+
+              item.classList.add('is-flipping');
+
+              // Swap at midpoint
+              setTimeout(() => {
+                img.src = img.dataset[newSide];
+                item.dataset.side = newSide;
+              }, 240);
+
+              setTimeout(() => {
+                item.classList.remove('is-flipping');
+              }, 600);
+            }, delay);
+          });
+
+          // Total time: max delay + animation duration
+          const maxDelay = (9 + 9) * 30 + 600;
+          setTimeout(() => {
+            gridSide = newSide;
+            btn.querySelector('span').textContent = gridSide === 'front' ? 'Flip All' : 'Flip Back';
+            isFlipping = false;
+          }, maxDelay);
+        });
+      }
+
+      // ---- Build Side Nav for grid page ----
+      function buildSideNav() {
+        const nav = document.getElementById('side-nav');
+        if (!nav) return;
+
+        const frag = document.createDocumentFragment();
+
+        // Home icon button — links back to main page
+        const homeLink = document.createElement('a');
+        homeLink.href = 'index.html';
+        homeLink.className = 'side-nav__item';
+        homeLink.setAttribute('aria-label', 'Home');
+        homeLink.innerHTML = `<svg class="side-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>`;
+        frag.appendChild(homeLink);
+
+        // Grid icon button (active on this page)
+        const gridLink = document.createElement('a');
+        gridLink.href = '#grid';
+        gridLink.className = 'side-nav__item is-active';
+        gridLink.setAttribute('aria-label', 'Grid');
+        gridLink.innerHTML = `<svg class="side-nav__icon" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/>
+          <circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/>
+          <circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/>
+        </svg>`;
+        frag.appendChild(gridLink);
+
+        // Divider
+        const div = document.createElement('div');
+        div.className = 'side-nav__divider';
+        frag.appendChild(div);
+
+        // Numbered items 01-14 — link back to main page sections
+        for (let i = 0; i < CONFIG.capsToShow; i++) {
+          const n = String(i + 1).padStart(2, '0');
+          const a = document.createElement('a');
+          a.href = `index.html#cap-${i + 1}`;
+          a.className = 'side-nav__item';
+          a.dataset.section = String(i + 1);
+          a.textContent = n;
+          frag.appendChild(a);
+        }
+
+        nav.appendChild(frag);
+      }
+
+      // ---- Lightbox (same as main page) ----
+      function initLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        const lightboxContent = document.getElementById('lightbox-content');
+        const lightboxContainer = document.getElementById('lightbox-container');
+        const overlay = lightbox.querySelector('.lightbox__overlay');
+        const closeBtn = lightbox.querySelector('.lightbox__close');
+        const zoomHint = document.getElementById('zoom-hint');
+
+        let originRect = null;
+        let isZoomed = false;
+        let isOpen = false;
+        const desktopZoomScale = 2.5;
+        let currentScale = 1;
+        let currentTx = 0;
+        let currentTy = 0;
+
+        let lastTouchDist = 0;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+        let touchStartedZoomed = false;
+        const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+        zoomHint.textContent = isTouchDevice
+          ? 'Double-tap to zoom \u00b7 Pinch to resize'
+          : 'Click to zoom \u00b7 Move cursor to pan';
+
+        function applyTransform() {
+          lightboxImage.style.transform = `scale(${currentScale}) translate(${currentTx}%, ${currentTy}%)`;
+        }
+
+        function clampPan() {
+          const maxPan = Math.max(0, (currentScale - 1) * 50 * 0.65);
+          currentTx = Math.max(-maxPan, Math.min(maxPan, currentTx));
+          currentTy = Math.max(-maxPan, Math.min(maxPan, currentTy));
+        }
+
+        function openLightbox(imageSrc, el) {
+          isZoomed = false;
+          isOpen = true;
+          currentScale = 1;
+          currentTx = 0;
+          currentTy = 0;
+          lightboxImage.style.transform = 'scale(1)';
+          lightboxContainer.classList.remove('is-zoomed');
+          zoomHint.classList.remove('is-hidden');
+          lightbox.classList.remove('is-closing');
+
+          originRect = el.getBoundingClientRect();
+
+          lightboxContent.style.transition = 'none';
+          lightboxContent.style.opacity = '1';
+          lightboxContent.style.top = originRect.top + 'px';
+          lightboxContent.style.left = originRect.left + 'px';
+          lightboxContent.style.width = originRect.width + 'px';
+          lightboxContent.style.height = originRect.height + 'px';
+
+          lightboxImage.src = imageSrc;
+          lightbox.classList.add('is-active');
+          lightbox.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+
+          lightboxContent.offsetHeight;
+
+          const sz = Math.min(window.innerWidth * (isTouchDevice ? 0.85 : 0.7), window.innerHeight * (isTouchDevice ? 0.85 : 0.7));
+          lightboxContent.style.transition = '';
+          lightboxContent.style.top = ((window.innerHeight - sz) / 2) + 'px';
+          lightboxContent.style.left = ((window.innerWidth - sz) / 2) + 'px';
+          lightboxContent.style.width = sz + 'px';
+          lightboxContent.style.height = sz + 'px';
+        }
+
+        function closeLightbox() {
+          if (!isOpen) return;
+          isOpen = false;
+          isZoomed = false;
+          currentScale = 1;
+          currentTx = 0;
+          currentTy = 0;
+          lightboxImage.style.transform = 'scale(1)';
+          lightboxContainer.classList.remove('is-zoomed');
+
+          lightbox.classList.add('is-closing');
+
+          if (originRect) {
+            lightboxContent.style.top = originRect.top + 'px';
+            lightboxContent.style.left = originRect.left + 'px';
+            lightboxContent.style.width = originRect.width + 'px';
+            lightboxContent.style.height = originRect.height + 'px';
+          }
+
+          setTimeout(() => {
+            lightbox.classList.remove('is-active', 'is-closing');
+            lightbox.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            lightboxImage.src = '';
+            lightboxContent.style.opacity = '';
+            originRect = null;
+          }, 500);
+        }
+
+        function toggleZoom(e) {
+          if (isTouchDevice) return;
+          isZoomed = !isZoomed;
+          if (isZoomed) {
+            currentScale = desktopZoomScale;
+            lightboxContainer.classList.add('is-zoomed');
+            zoomHint.classList.add('is-hidden');
+            panToPointDesktop(e.clientX, e.clientY);
+          } else {
+            currentScale = 1;
+            currentTx = 0;
+            currentTy = 0;
+            applyTransform();
+            lightboxContainer.classList.remove('is-zoomed');
+            zoomHint.classList.remove('is-hidden');
+          }
+        }
+
+        function panToPointDesktop(clientX, clientY) {
+          const rect = lightboxContainer.getBoundingClientRect();
+          const nx = ((clientX - rect.left) / rect.width - 0.5) * 2;
+          const ny = ((clientY - rect.top) / rect.height - 0.5) * 2;
+          const maxPan = (currentScale - 1) * 50 * 0.65;
+          currentTx = -nx * maxPan;
+          currentTy = -ny * maxPan;
+          applyTransform();
+        }
+
+        lightboxContainer.addEventListener('mousemove', (e) => {
+          if (!isZoomed || isTouchDevice) return;
+          panToPointDesktop(e.clientX, e.clientY);
+        });
+
+        function getTouchDist(t1, t2) {
+          const dx = t1.clientX - t2.clientX;
+          const dy = t1.clientY - t2.clientY;
+          return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        lightboxContainer.addEventListener('touchstart', (e) => {
+          if (!isOpen) return;
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            lastTouchDist = getTouchDist(e.touches[0], e.touches[1]);
+          } else if (e.touches.length === 1 && currentScale > 1.05) {
+            e.preventDefault();
+            touchStartedZoomed = true;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+          } else {
+            touchStartedZoomed = false;
+          }
+        }, { passive: false });
+
+        lightboxContainer.addEventListener('touchmove', (e) => {
+          if (!isOpen) return;
+          if (e.touches.length === 2) {
+            e.preventDefault();
+            const dist = getTouchDist(e.touches[0], e.touches[1]);
+            const delta = dist / lastTouchDist;
+            currentScale = Math.max(1, Math.min(5, currentScale * delta));
+            lastTouchDist = dist;
+            isZoomed = currentScale > 1.05;
+            if (isZoomed) {
+              lightboxContainer.classList.add('is-zoomed');
+              zoomHint.classList.add('is-hidden');
+            }
+            clampPan();
+            applyTransform();
+            return;
+          }
+          if (e.touches.length === 1 && touchStartedZoomed && currentScale > 1.05) {
+            e.preventDefault();
+            const dx = e.touches[0].clientX - lastTouchX;
+            const dy = e.touches[0].clientY - lastTouchY;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+            const rect = lightboxContainer.getBoundingClientRect();
+            currentTx += (dx / rect.width) * 100;
+            currentTy += (dy / rect.height) * 100;
+            clampPan();
+            applyTransform();
+          }
+        }, { passive: false });
+
+        lightboxContainer.addEventListener('touchend', (e) => {
+          if (!isOpen) return;
+          if (e.touches.length === 0 && currentScale < 1.15) {
+            currentScale = 1;
+            currentTx = 0;
+            currentTy = 0;
+            isZoomed = false;
+            lightboxContainer.classList.remove('is-zoomed');
+            zoomHint.classList.remove('is-hidden');
+            applyTransform();
+          }
+          touchStartedZoomed = false;
+        });
+
+        let lastTap = 0;
+        lightboxContainer.addEventListener('touchend', (e) => {
+          if (!isOpen || e.touches.length > 0) return;
+          const now = Date.now();
+          if (now - lastTap < 300) {
+            e.preventDefault();
+            if (currentScale > 1.1) {
+              currentScale = 1;
+              currentTx = 0;
+              currentTy = 0;
+              isZoomed = false;
+              lightboxContainer.classList.remove('is-zoomed');
+              zoomHint.classList.remove('is-hidden');
+            } else {
+              currentScale = 2.5;
+              isZoomed = true;
+              lightboxContainer.classList.add('is-zoomed');
+              zoomHint.classList.add('is-hidden');
+              const touch = e.changedTouches[0];
+              const rect = lightboxContainer.getBoundingClientRect();
+              const nx = ((touch.clientX - rect.left) / rect.width - 0.5) * 2;
+              const ny = ((touch.clientY - rect.top) / rect.height - 0.5) * 2;
+              const maxPan = (currentScale - 1) * 50 * 0.65;
+              currentTx = -nx * maxPan;
+              currentTy = -ny * maxPan;
+            }
+            applyTransform();
+            lastTap = 0;
+          } else {
+            lastTap = now;
+          }
+        });
+
+        // Click to open caps — prevent opening during flip animation
+        document.addEventListener('click', (e) => {
+          const gridItem = e.target.closest('.grid-caps__item');
+          if (gridItem) {
+            if (gridItem.classList.contains('is-flipping')) return;
+            const img = gridItem.querySelector('img');
+            if (img) openLightbox(img.src, img);
+            return;
+          }
+        });
+
+        lightboxContainer.addEventListener('click', toggleZoom);
+        overlay.addEventListener('click', closeLightbox);
+        closeBtn.addEventListener('click', closeLightbox);
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && lightbox.classList.contains('is-active')) closeLightbox();
+        });
+      }
+
+      // ---- Loading Screen ----
+      function waitForAllImages() {
+        return new Promise((resolve) => {
+          const images = document.querySelectorAll('img[src]');
+          if (!images.length) { resolve(); return; }
+
+          let loaded = 0;
+          const total = images.length;
+
+          function check() {
+            loaded++;
+            if (loaded >= total) resolve();
+          }
+
+          images.forEach(img => {
+            if (img.complete && img.naturalWidth > 0) {
+              check();
+            } else {
+              img.addEventListener('load', check, { once: true });
+              img.addEventListener('error', check, { once: true });
+            }
+          });
+
+          setTimeout(resolve, 12000);
+        });
+      }
+
+      function hideLoadingScreen() {
+        const loader = document.getElementById('loading-screen');
+        if (loader) {
+          loader.classList.add('is-hidden');
+          setTimeout(() => { loader.remove(); }, 700);
+        }
+      }
+
+      // ---- Init ----
+      async function init() {
+        if (await loadData()) {
+          renderGridSection();
+          buildSideNav();
+          initFlipAll();
+          initLightbox();
+
+          await waitForAllImages();
+          hideLoadingScreen();
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
