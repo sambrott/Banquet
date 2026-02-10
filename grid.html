@@ -28,6 +28,12 @@
       max-width: min(90vh, 1000px);
       width: 100%;
     }
+    @media (max-width: 768px) {
+      .grid-page .grid-section {
+        min-height: 100vh;
+        height: 100vh;
+      }
+    }
   </style>
 </head>
 <body class="grid-page">
@@ -35,6 +41,13 @@
   <div class="loading-screen" id="loading-screen">
     <img src="assets/bottlecap loading white.png" alt="" class="loading-screen__icon">
   </div>
+
+  <!-- Mobile nav toggle arrow -->
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+    <svg class="nav-toggle__arrow" viewBox="0 0 16 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="1,1 8,8 15,1"/>
+    </svg>
+  </button>
 
   <div class="site-wrapper">
     <nav class="side-nav" id="side-nav" aria-label="Section navigation">
@@ -50,6 +63,9 @@
     </main>
   </div>
 
+  <!-- Footnote -->
+  <a href="index.html" class="site-footnote is-visible">BANQUET &mdash; A Closer Look</a>
+
   <!-- Lightbox -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lightbox__overlay"></div>
@@ -59,6 +75,12 @@
       </div>
     </div>
     <button class="lightbox__close" aria-label="Close">&times;</button>
+    <button class="lightbox__arrow lightbox__arrow--left" id="lightbox-prev" aria-label="Previous cap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,4 7,12 15,20"/></svg>
+    </button>
+    <button class="lightbox__arrow lightbox__arrow--right" id="lightbox-next" aria-label="Next cap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,4 17,12 9,20"/></svg>
+    </button>
     <p class="lightbox__zoom-hint" id="zoom-hint"></p>
   </div>
 
@@ -74,6 +96,14 @@
           facts: 'assets/banquet-facts.json'
         }
       };
+
+      const THUMB_GRID = 150;  // grid cells (~100px CSS, ~1.5x retina)
+
+      // Cloudinary on-the-fly resize — insert transforms after /upload/
+      function thumb(url, w) {
+        if (!url || !url.includes('/upload/')) return url;
+        return url.replace('/upload/', `/upload/f_auto,q_auto,w_${w}/`);
+      }
 
       let capData = { frontCaps: [], backCaps: [], facts: [] };
 
@@ -101,16 +131,19 @@
         const container = document.getElementById('grid-caps');
         if (!container) return;
         const frag = document.createDocumentFragment();
-        const count = Math.min(CONFIG.gridCapsToShow, capData.frontCaps.length);
+        const count = CONFIG.gridCapsToShow;
         for (let i = 0; i < count; i++) {
           const item = document.createElement('div');
           item.className = 'grid-caps__item';
           item.dataset.capIndex = i;
           item.dataset.side = 'front';
           const img = document.createElement('img');
-          img.src = capData.frontCaps[i];
-          img.dataset.front = capData.frontCaps[i];
-          img.dataset.back = capData.backCaps[i % capData.backCaps.length] || '';
+          // Cycle through available caps to fill all 100 slots
+          const frontUrl = capData.frontCaps[i % capData.frontCaps.length];
+          const backUrl = capData.backCaps[i % capData.backCaps.length] || '';
+          img.src = thumb(frontUrl, THUMB_GRID);
+          img.dataset.front = frontUrl;
+          img.dataset.back = backUrl;
           img.alt = '';
           img.loading = 'lazy';
           item.appendChild(img);
@@ -130,7 +163,7 @@
         const btn = document.createElement('button');
         btn.className = 'grid-flip-btn';
         btn.type = 'button';
-        btn.innerHTML = `<span>Flip All</span>
+        btn.innerHTML = `<span>Flip</span>
           <svg class="grid-flip-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
             <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
@@ -150,7 +183,7 @@
           items.forEach((item, i) => {
             const row = Math.floor(i / cols);
             const col = i % cols;
-            const delay = (row + col) * 30;
+            const delay = (row + col) * 60;
 
             setTimeout(() => {
               const img = item.querySelector('img');
@@ -160,21 +193,21 @@
 
               // Swap at midpoint
               setTimeout(() => {
-                img.src = img.dataset[newSide];
+                img.src = thumb(img.dataset[newSide], THUMB_GRID);
                 item.dataset.side = newSide;
-              }, 240);
+              }, 480);
 
               setTimeout(() => {
                 item.classList.remove('is-flipping');
-              }, 600);
+              }, 1200);
             }, delay);
           });
 
           // Total time: max delay + animation duration
-          const maxDelay = (9 + 9) * 30 + 600;
+          const maxDelay = (9 + 9) * 60 + 1200;
           setTimeout(() => {
             gridSide = newSide;
-            btn.querySelector('span').textContent = gridSide === 'front' ? 'Flip All' : 'Flip Back';
+            btn.querySelector('span').textContent = 'Flip';
             isFlipping = false;
           }, maxDelay);
         });
@@ -185,20 +218,30 @@
         const nav = document.getElementById('side-nav');
         if (!nav) return;
 
-        const frag = document.createDocumentFragment();
+        // Scrollable area for numbered items (top)
+        const scrollArea = document.createElement('div');
+        scrollArea.className = 'side-nav__numbers';
 
-        // Home icon button — links back to main page
-        const homeLink = document.createElement('a');
-        homeLink.href = 'index.html';
-        homeLink.className = 'side-nav__item';
-        homeLink.setAttribute('aria-label', 'Home');
-        homeLink.innerHTML = `<svg class="side-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>`;
-        frag.appendChild(homeLink);
+        for (let i = 0; i < CONFIG.capsToShow; i++) {
+          const n = String(i + 1).padStart(2, '0');
+          const a = document.createElement('a');
+          a.href = `index.html#cap-${i + 1}`;
+          a.className = 'side-nav__item';
+          a.dataset.section = String(i + 1);
+          a.textContent = n;
+          scrollArea.appendChild(a);
+        }
 
-        // Grid icon button (active on this page)
+        nav.appendChild(scrollArea);
+
+        // Pinned bottom: divider + grid icon (active on this page)
+        const footer = document.createElement('div');
+        footer.className = 'side-nav__footer';
+
+        const div = document.createElement('div');
+        div.className = 'side-nav__divider';
+        footer.appendChild(div);
+
         const gridLink = document.createElement('a');
         gridLink.href = '#grid';
         gridLink.className = 'side-nav__item is-active';
@@ -208,25 +251,9 @@
           <circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/>
           <circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/>
         </svg>`;
-        frag.appendChild(gridLink);
+        footer.appendChild(gridLink);
 
-        // Divider
-        const div = document.createElement('div');
-        div.className = 'side-nav__divider';
-        frag.appendChild(div);
-
-        // Numbered items 01-14 — link back to main page sections
-        for (let i = 0; i < CONFIG.capsToShow; i++) {
-          const n = String(i + 1).padStart(2, '0');
-          const a = document.createElement('a');
-          a.href = `index.html#cap-${i + 1}`;
-          a.className = 'side-nav__item';
-          a.dataset.section = String(i + 1);
-          a.textContent = n;
-          frag.appendChild(a);
-        }
-
-        nav.appendChild(frag);
+        nav.appendChild(footer);
       }
 
       // ---- Lightbox (same as main page) ----
@@ -246,6 +273,11 @@
         let currentScale = 1;
         let currentTx = 0;
         let currentTy = 0;
+
+        // Navigation state
+        let currentCapIndex = -1;
+        const prevBtn = document.getElementById('lightbox-prev');
+        const nextBtn = document.getElementById('lightbox-next');
 
         let lastTouchDist = 0;
         let lastTouchX = 0;
@@ -267,6 +299,8 @@
           currentTy = Math.max(-maxPan, Math.min(maxPan, currentTy));
         }
 
+        const footnote = document.querySelector('.site-footnote');
+
         function openLightbox(imageSrc, el) {
           isZoomed = false;
           isOpen = true;
@@ -277,6 +311,12 @@
           lightboxContainer.classList.remove('is-zoomed');
           zoomHint.classList.remove('is-hidden');
           lightbox.classList.remove('is-closing');
+
+          // Hide footnote instantly
+          if (footnote) {
+            footnote.classList.add('is-lightbox-open');
+            footnote.classList.remove('is-lightbox-closing');
+          }
 
           originRect = el.getBoundingClientRect();
 
@@ -309,26 +349,36 @@
           currentScale = 1;
           currentTx = 0;
           currentTy = 0;
-          lightboxImage.style.transform = 'scale(1)';
+
+          // Immediately wipe every trace of the content box
+          lightboxImage.removeAttribute('src');
+          lightboxImage.removeAttribute('style');
           lightboxContainer.classList.remove('is-zoomed');
+          lightboxContent.removeAttribute('style');
+          lightboxContent.style.display = 'none';
 
           lightbox.classList.add('is-closing');
 
-          if (originRect) {
-            lightboxContent.style.top = originRect.top + 'px';
-            lightboxContent.style.left = originRect.left + 'px';
-            lightboxContent.style.width = originRect.width + 'px';
-            lightboxContent.style.height = originRect.height + 'px';
+          // Keep footnote hidden during close
+          if (footnote) {
+            footnote.classList.remove('is-lightbox-open');
+            footnote.classList.add('is-lightbox-closing');
           }
 
           setTimeout(() => {
+            // Remove classes first so lightbox returns to hidden CSS state
             lightbox.classList.remove('is-active', 'is-closing');
             lightbox.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
-            lightboxImage.src = '';
-            lightboxContent.style.opacity = '';
+            // Now safe to restore — lightbox CSS already hides everything
+            lightboxContent.removeAttribute('style');
             originRect = null;
-          }, 500);
+          }, 350);
+
+          // Bring footnote back after zoom hint has fully faded out
+          setTimeout(() => {
+            if (footnote) footnote.classList.remove('is-lightbox-closing');
+          }, 700);
         }
 
         function toggleZoom(e) {
@@ -370,8 +420,33 @@
           return Math.sqrt(dx * dx + dy * dy);
         }
 
+        // RAF-batched transform for smooth 60fps touch
+        let touchRAF = null;
+        function applyTransformImmediate() {
+          if (touchRAF) return;
+          touchRAF = requestAnimationFrame(() => {
+            touchRAF = null;
+            applyTransform();
+          });
+        }
+
+        // Velocity tracking for momentum
+        let velocityX = 0;
+        let velocityY = 0;
+        let lastMoveTime = 0;
+        let momentumRAF = null;
+        let cachedRect = null;
+
         lightboxContainer.addEventListener('touchstart', (e) => {
           if (!isOpen) return;
+
+          if (momentumRAF) { cancelAnimationFrame(momentumRAF); momentumRAF = null; }
+          velocityX = 0;
+          velocityY = 0;
+
+          lightboxContainer.classList.add('is-touching');
+          cachedRect = lightboxContainer.getBoundingClientRect();
+
           if (e.touches.length === 2) {
             e.preventDefault();
             lastTouchDist = getTouchDist(e.touches[0], e.touches[1]);
@@ -380,6 +455,7 @@
             touchStartedZoomed = true;
             lastTouchX = e.touches[0].clientX;
             lastTouchY = e.touches[0].clientY;
+            lastMoveTime = performance.now();
           } else {
             touchStartedZoomed = false;
           }
@@ -387,6 +463,7 @@
 
         lightboxContainer.addEventListener('touchmove', (e) => {
           if (!isOpen) return;
+
           if (e.touches.length === 2) {
             e.preventDefault();
             const dist = getTouchDist(e.touches[0], e.touches[1]);
@@ -399,33 +476,71 @@
               zoomHint.classList.add('is-hidden');
             }
             clampPan();
-            applyTransform();
+            applyTransformImmediate();
             return;
           }
+
           if (e.touches.length === 1 && touchStartedZoomed && currentScale > 1.05) {
             e.preventDefault();
+            const now = performance.now();
             const dx = e.touches[0].clientX - lastTouchX;
             const dy = e.touches[0].clientY - lastTouchY;
+            const dt = Math.max(1, now - lastMoveTime);
+
             lastTouchX = e.touches[0].clientX;
             lastTouchY = e.touches[0].clientY;
-            const rect = lightboxContainer.getBoundingClientRect();
-            currentTx += (dx / rect.width) * 100;
-            currentTy += (dy / rect.height) * 100;
+            lastMoveTime = now;
+
+            const pctX = (dx / cachedRect.width) * 100;
+            const pctY = (dy / cachedRect.height) * 100;
+
+            velocityX = 0.7 * (pctX / dt * 16) + 0.3 * velocityX;
+            velocityY = 0.7 * (pctY / dt * 16) + 0.3 * velocityY;
+
+            currentTx += pctX;
+            currentTy += pctY;
             clampPan();
-            applyTransform();
+            applyTransformImmediate();
           }
         }, { passive: false });
 
+        function startMomentum() {
+          if (Math.abs(velocityX) < 0.1 && Math.abs(velocityY) < 0.1) return;
+          const friction = 0.92;
+          function tick() {
+            velocityX *= friction;
+            velocityY *= friction;
+            if (Math.abs(velocityX) < 0.05 && Math.abs(velocityY) < 0.05) {
+              momentumRAF = null;
+              return;
+            }
+            currentTx += velocityX;
+            currentTy += velocityY;
+            clampPan();
+            applyTransform();
+            momentumRAF = requestAnimationFrame(tick);
+          }
+          momentumRAF = requestAnimationFrame(tick);
+        }
+
         lightboxContainer.addEventListener('touchend', (e) => {
           if (!isOpen) return;
+
+          lightboxContainer.classList.remove('is-touching');
+          cachedRect = null;
+
           if (e.touches.length === 0 && currentScale < 1.15) {
             currentScale = 1;
             currentTx = 0;
             currentTy = 0;
             isZoomed = false;
+            velocityX = 0;
+            velocityY = 0;
             lightboxContainer.classList.remove('is-zoomed');
             zoomHint.classList.remove('is-hidden');
             applyTransform();
+          } else if (e.touches.length === 0 && touchStartedZoomed) {
+            startMomentum();
           }
           touchStartedZoomed = false;
         });
@@ -436,6 +551,8 @@
           const now = Date.now();
           if (now - lastTap < 300) {
             e.preventDefault();
+            if (momentumRAF) { cancelAnimationFrame(momentumRAF); momentumRAF = null; }
+
             if (currentScale > 1.1) {
               currentScale = 1;
               currentTx = 0;
@@ -463,22 +580,74 @@
           }
         });
 
-        // Click to open caps — prevent opening during flip animation
+        // Navigate to a specific grid cap by index
+        function goToCap(index) {
+          const items = document.querySelectorAll('.grid-caps__item');
+          if (!items.length) return;
+
+          // Wrap around
+          if (index < 0) index = items.length - 1;
+          if (index >= items.length) index = 0;
+
+          currentCapIndex = index;
+          const item = items[index];
+          const img = item.querySelector('img');
+          if (!img) return;
+
+          const side = item.dataset.side || 'front';
+          const fullRes = img.dataset[side] || img.src;
+
+          // Reset zoom state
+          isZoomed = false;
+          currentScale = 1;
+          currentTx = 0;
+          currentTy = 0;
+          lightboxImage.style.transform = 'scale(1)';
+          lightboxContainer.classList.remove('is-zoomed');
+          zoomHint.classList.remove('is-hidden');
+
+          // Swap image with a quick fade
+          lightboxImage.style.opacity = '0';
+          setTimeout(() => {
+            lightboxImage.src = fullRes;
+            lightboxImage.style.opacity = '1';
+          }, 120);
+        }
+
+        // Click to open caps — pass full-res URL for lightbox
         document.addEventListener('click', (e) => {
           const gridItem = e.target.closest('.grid-caps__item');
           if (gridItem) {
             if (gridItem.classList.contains('is-flipping')) return;
             const img = gridItem.querySelector('img');
-            if (img) openLightbox(img.src, img);
+            const side = gridItem.dataset.side || 'front';
+            // Track which cap we opened
+            const items = document.querySelectorAll('.grid-caps__item');
+            currentCapIndex = Array.from(items).indexOf(gridItem);
+            if (img) openLightbox(img.dataset[side] || img.src, img);
             return;
           }
+        });
+
+        // Arrow navigation
+        prevBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isOpen) goToCap(currentCapIndex - 1);
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isOpen) goToCap(currentCapIndex + 1);
         });
 
         lightboxContainer.addEventListener('click', toggleZoom);
         overlay.addEventListener('click', closeLightbox);
         closeBtn.addEventListener('click', closeLightbox);
         document.addEventListener('keydown', (e) => {
+          if (!isOpen) return;
           if (e.key === 'Escape' && lightbox.classList.contains('is-active')) closeLightbox();
+          if (e.key === 'ArrowLeft') goToCap(currentCapIndex - 1);
+          if (e.key === 'ArrowRight') goToCap(currentCapIndex + 1);
         });
       }
 
@@ -505,7 +674,8 @@
             }
           });
 
-          setTimeout(resolve, 12000);
+          // Short safety cap — don't hold the loader longer than 3s
+          setTimeout(resolve, 3000);
         });
       }
 
@@ -513,8 +683,20 @@
         const loader = document.getElementById('loading-screen');
         if (loader) {
           loader.classList.add('is-hidden');
-          setTimeout(() => { loader.remove(); }, 700);
+          setTimeout(() => { loader.remove(); }, 400);
         }
+      }
+
+      // ---- Mobile nav toggle ----
+      function initNavToggle() {
+        const toggle = document.getElementById('nav-toggle');
+        const nav = document.getElementById('side-nav');
+        if (!toggle || !nav) return;
+
+        toggle.addEventListener('click', () => {
+          const isOpen = nav.classList.toggle('is-open');
+          toggle.classList.toggle('is-nav-open', isOpen);
+        });
       }
 
       // ---- Init ----
@@ -524,6 +706,7 @@
           buildSideNav();
           initFlipAll();
           initLightbox();
+          initNavToggle();
 
           await waitForAllImages();
           hideLoadingScreen();
